@@ -1,4 +1,5 @@
 export default function createApi() {
+  const urlApi = 'https://localhost:44320';
   const api = {};
 
   const direcoesFase = {
@@ -27,18 +28,27 @@ export default function createApi() {
     return S4() + S4() + S4() + S4() + S4() + S4() + S4() + S4();
   };
 
-  api.retornarMundo = async (nomeMundo) => {
+  api.listarMundos = async () => {
     return new Promise((resolve, reject) => {
-      fetch(`https://localhost:44320/mundos/${nomeMundo}`)
+      fetch(`${urlApi}/mundos`)
         .then((response) => response.json())
         .then((json) => resolve(json))
-        .catch((err) => reject('Erro ao interpretar JSON do mundo-01'));
+        .catch((err) => reject(`Erro ao retornar lista de mundos. Erro: ${err}`));
+    });
+  };
+
+  api.retornarMundo = async (nomeMundo) => {
+    return new Promise((resolve, reject) => {
+      fetch(`${urlApi}/mundos/${nomeMundo}`)
+        .then((response) => response.json())
+        .then((json) => resolve(json))
+        .catch((err) => reject(`Erro ao retornar mundo '${nomeMundo}'. Erro: ${err}`));
     });
   };
 
   api.salvarMundo = (nomeMundo, objMundo) => {
     return new Promise((resolve, reject) => {
-        fetch(`https://localhost:44320/mundos/${nomeMundo}`, {
+        fetch(`${urlApi}/mundos/${nomeMundo}`, {
         method: 'POST',
         headers: {
             'Accept': 'application/json',
@@ -46,7 +56,7 @@ export default function createApi() {
         },
         body: JSON.stringify({StrMundo: JSON.stringify(objMundo, null, 4)}, null, 4)
       }).then(response => resolve(response.json()))
-      .catch(err => reject(err));
+      .catch(err => reject(`Erro ao salvar mundo '${nomeMundo}'. Erro: ${err}`));
     });
   };
 

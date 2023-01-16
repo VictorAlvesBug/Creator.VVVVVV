@@ -2,7 +2,7 @@ import createApi from './api.js';
 import createDesenho from './desenho.js';
 import createUtils from './utils.js';
 
-export default function createJogo(ctx, nomeMundo) {
+export default function createJogo(ctx) {
   const jogo = {};
 
   const api = createApi();
@@ -17,6 +17,14 @@ export default function createJogo(ctx, nomeMundo) {
 
   jogo.tipo = 'chao';
   jogo.modelo = 'comum';
+
+  function retornarNomeMundoAtual(){
+    return localStorage.getItem('nome-mundo') || 'mundo-nao-salvo';
+  }
+
+  function alterarNomeMundoAtual(novoNomeMundo){
+    localStorage.setItem('nome-mundo', novoNomeMundo)
+  }
 
   async function retornarFaseAtual() {
     return jogo
@@ -45,7 +53,7 @@ export default function createJogo(ctx, nomeMundo) {
         momentoAtual
       ) {
         api
-          .retornarMundo(nomeMundo)
+          .retornarMundo(retornarNomeMundoAtual())
           .then((mundoAtualizado) => {
             mundo = mundoAtualizado;
             momentoUltimaAtualizacao = momentoAtual;
@@ -90,8 +98,16 @@ export default function createJogo(ctx, nomeMundo) {
 
   function otimizarMundo(objMundo) {
     objMundo.fases.forEach((fase) => {
-      fase = unificarPartesAdjacentes(fase);
-      fase = unificarPartesDuplicadas(fase);
+      fase = dividirBlocosGrandes(fase);
+
+      let qtdePartes;
+
+      do{
+        qtdePartes = fase.partes.length;
+        fase = unificarPartesAdjacentes(fase);
+        fase = unificarPartesDuplicadas(fase);
+      } 
+      while(qtdePartes !== fase.partes.length);
     });
 
     return objMundo;
@@ -125,6 +141,31 @@ export default function createJogo(ctx, nomeMundo) {
       utils.estaEntre(pA.topo, pB.topo, pB.topo + pB.altura) &&
       utils.estaEntre(pA.topo + pA.altura, pB.topo, pB.topo + pB.altura)
     );
+  }
+
+  function dividirBlocosGrandes(fase) {
+    fase.partes = fase.partes.reduce((listaPartes, parte) => {
+
+      for(let esquerda = parte.esquerda; esquerda < parte.esquerda+parte.largura; esquerda+=100){
+        for(let topo = parte.topo; topo < parte.topo+parte.altura; topo+=100){
+          const parteAdicionarLista = {
+            id: api.gerarId(),
+            tipo: parte.tipo,
+            modelo: parte.modelo,
+            esquerda,
+            topo,
+            largura: 100,
+            altura: 100
+          };
+          listaPartes.push(parteAdicionarLista);
+        }
+      }
+
+
+      return listaPartes;
+    }, []);
+
+    return fase;
   }
 
   function unificarPartesAdjacentes(fase) {
@@ -220,7 +261,7 @@ export default function createJogo(ctx, nomeMundo) {
       }
     });
 
-    api.salvarMundo(nomeMundo, otimizarMundo(mundo));
+    api.salvarMundo(retornarNomeMundoAtual(), otimizarMundo(mundo));
   };
 
   jogo.mouseRemoverBloco = (mouse) => {
@@ -302,7 +343,7 @@ export default function createJogo(ctx, nomeMundo) {
       }
     });
 
-    api.salvarMundo(nomeMundo, otimizarMundo(mundo));
+    api.salvarMundo(retornarNomeMundoAtual(), otimizarMundo(mundo));
   };
 
   jogo.mouseCopiarBloco = (mouse) => {};
@@ -315,26 +356,7 @@ export default function createJogo(ctx, nomeMundo) {
     }
 
     const desenhoBotao = createDesenho(ctxBotao);
-/*
-blocoGrid = x
-botao = 2x - 10 = 200 - 10
-2x - 10 - 2borda = x;
-- 2borda = x - 2x + 10
-2borda = x - 10
-borda = (x - 10) / 2
 
-200 - 10 - 2borda = x;
-- 2borda = x - 200 + 10
-2borda = 200 - 10 - x
-
-2x - 10 = 200 - 10 = 190
-x = 100
-2borda = 190 - x
-2borda = 190 - 100
-2borda = 90
-borda = 45
-
-*/
     switch (tipo) {
       case 'chao':
         const chao = 
@@ -369,13 +391,59 @@ borda = 45
 
   jogo.adicionarEventoBotao = (botao, tipo, modelo) => {
     botao.addEventListener('click', () => {
-      if (tipo === 'limpar-fase') {
-        jogo.limparFase();
-        return;
-      }
+      switch(tipo){
+        case 'limpar-fase':
+          if(confirm("Deseja apagar toda a fase?")){
+            jogo.limparFase();
+          }
+          break;
 
-      jogo.tipo = tipo;
-      jogo.modelo = modelo;
+        case 'salvar-mundo':
+          let nomeMundoSalvar;
+          
+          do{
+            nomeMundoSalvar = prompt('Digite um nome para este mundo', retornarNomeMundoAtual());
+          }
+          while(nomeMundoSalvar !== null && nomeMundoSalvar.trim().length === 0);
+
+          if(!nomeMundoSalvar){
+            return;
+          }
+
+          if(!nomeMundoSalvar || nomeMundoSalvar.trim().length === 0){
+            return alert('Nome inválido. Mundo não salvo.');
+          }
+          
+          alterarNomeMundoAtual(nomeMundoSalvar);
+          api.salvarMundo(nomeMundoSalvar, otimizarMundo(mundo));
+          break;
+
+        case 'abrir-mundo':
+          api.listarMundos()
+            .then(listaMundos => {
+              const strListaMundos = listaMundos.reduce((acc, nomeMundo, indice) => {
+                return `${acc}\n${indice+1} - ${nomeMundo}`
+              }, '');
+
+              if(strListaMundos.length === 0){
+                return alert('Nenhum mundo encontrado.');
+              }
+
+              let indiceMundoSelecionado = Number(prompt(`Qual mundo deseja abrir?${strListaMundos}`)) - 1;
+
+              if(!utils.estaEntre(indiceMundoSelecionado, 0, listaMundos.length-1)){
+                return alert('Mundo inválido.')
+              }
+
+              alterarNomeMundoAtual(listaMundos[indiceMundoSelecionado]);
+            });
+          break;
+
+        default:
+          jogo.tipo = tipo;
+          jogo.modelo = modelo;
+          break;
+      }
     });
   };
 
@@ -417,7 +485,7 @@ borda = 45
       }
     });
 
-    api.salvarMundo(nomeMundo, otimizarMundo(mundo));
+    api.salvarMundo(retornarNomeMundoAtual(), otimizarMundo(mundo));
   };
 
   return jogo;

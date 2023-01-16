@@ -118,10 +118,10 @@ export default function createDesenho(ctx) {
     listaPartes.forEach((parte) => {
       if(parte.tipo === 'chao'){
         modeloChao = parte.modelo;
-        const xInicial = parte.esquerda / 100;
-        const xFinal = (parte.esquerda + parte.largura) / 100;
-        const yInicial = parte.topo / 100;
-        const yFinal = (parte.topo + parte.altura) / 100;
+        const xInicial = parseInt(parte.esquerda / 100);
+        const xFinal = parseInt((parte.esquerda + parte.largura) / 100);
+        const yInicial = parseInt(parte.topo / 100);
+        const yFinal = parseInt((parte.topo + parte.altura) / 100);
 
         for(let x=xInicial; x<xFinal; x++){
           for(let y=yInicial; y<yFinal; y++){
@@ -249,12 +249,11 @@ export default function createDesenho(ctx) {
     const areaHover = desenho.retornarAreaMouse(mouse);
     areaHover.tipo = tipo;
     areaHover.modelo = modelo;
+    areaHover.comContorno = true;
 
     switch(tipo){
       case 'chao':
         desenho.desenharChao(areaHover);
-
-        desenho.desenharContornoChao([areaHover])
         break;
         case 'espinho':
           desenho.desenharEspinho(areaHover);

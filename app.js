@@ -5,8 +5,7 @@ const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 console.log(ctx);
 
-const nomeMundo = 'mundo-01';
-const jogo = createJogo(ctx, nomeMundo);
+const jogo = createJogo(ctx);
 const mouse = createMouse();
 
 setup().then(() => {

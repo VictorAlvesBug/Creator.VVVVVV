@@ -42,7 +42,10 @@ body{
     height: 100%;
 }
 
-.btn-ferramenta[data-tipo="limpar-fase"]{
-    font-size: 18pt;
+#caixa-ferramentas>.pull-right{
     margin-left: auto;
+}
+
+.btn-ferramenta.icone{
+    font-size: 18pt;
 }
