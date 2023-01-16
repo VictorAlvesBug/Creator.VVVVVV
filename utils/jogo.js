@@ -189,7 +189,6 @@ export default function createJogo(ctx, nomeMundo) {
       const parteJaFoiAdicionada = listaPartes.some(
         (parteB) => {
           const {id: _, ...pA} = parteA;
-          console.log(pA);
           const {id: __, ...pB} = parteB;
           return JSON.stringify(pA) === JSON.stringify(pB); 
         }
@@ -208,8 +207,7 @@ export default function createJogo(ctx, nomeMundo) {
     desenho.desenharBlocoMouseHover(mouse, jogo.tipo, jogo.modelo);
   };
 
-  jogo.mouseAdicionar = (mouse) => {
-    console.log(Date.now(), mouse);
+  jogo.mouseAdicionarBloco = (mouse) => {
     const largura = 100;
     const altura = 100;
     let esquerda = mouse.X - largura / 2;
@@ -236,9 +234,110 @@ export default function createJogo(ctx, nomeMundo) {
     api.salvarMundo(nomeMundo, otimizarMundo(mundo));
   };
 
-  jogo.mouseRemover = (mouse) => {};
+  jogo.mouseRemoverBloco = (mouse) => {
+    const largura = 100;
+    const altura = 100;
+    let esquerda = mouse.X - largura / 2;
+    let topo = mouse.Y - altura / 2;
 
-  jogo.mouseCopiar = (mouse) => {};
+    // Arredondar posição para bloco do grid mais próximo
+    esquerda = Math.round(esquerda / 100) * 100;
+    topo = Math.round(topo / 100) * 100;
+
+    const areaClicada = {
+      largura,
+      altura,
+      esquerda,
+      topo
+    };
+
+    mundo.fases.forEach(fase => {
+      if(fase.id === idFaseAtual){
+        fase.partes.forEach(parte => {
+          const parteContemAreaClicada = 
+            estaEntre(areaClicada.esquerda, parte.esquerda, parte.esquerda + parte.largura) &&
+            estaEntre(
+              areaClicada.esquerda + areaClicada.largura,
+              parte.esquerda,
+              parte.esquerda + parte.largura
+            ) &&
+            estaEntre(areaClicada.topo, parte.topo, parte.topo + parte.altura) &&
+            estaEntre(areaClicada.topo + areaClicada.altura, parte.topo, parte.topo + parte.altura) 
+    
+          if(parteContemAreaClicada){
+            const manterAreaEsquerda = 
+              parte.esquerda < areaClicada.esquerda;
+    
+            const manterAreaDireita = 
+              parte.esquerda + parte.largura > areaClicada.esquerda + areaClicada.largura;
+    
+            const manterAreaSuperior = 
+              parte.topo < areaClicada.topo;
+    
+            const manterAreaInferior = 
+              parte.topo + parte.altura > areaClicada.topo + areaClicada.altura;
+            
+            // Remover parte
+            fase.partes = fase.partes.filter(p => 
+              p.id !== parte.id);
+            
+            if(manterAreaEsquerda){
+              fase.partes.push({
+                id: api.gerarId(),
+                tipo: parte.tipo,
+                modelo: parte.modelo,
+                topo: parte.topo,
+                altura: parte.altura,
+                esquerda: parte.esquerda,
+                largura: areaClicada.esquerda - parte.esquerda
+              });
+            }
+            
+            if(manterAreaDireita){
+              fase.partes.push({
+                id: api.gerarId(),
+                tipo: parte.tipo,
+                modelo: parte.modelo,
+                topo: parte.topo,
+                altura: parte.altura,
+                esquerda: areaClicada.esquerda + areaClicada.largura,
+                largura: parte.esquerda + parte.largura - (areaClicada.esquerda + areaClicada.largura)
+              });
+            }
+            
+            if(manterAreaSuperior){
+              fase.partes.push({
+                id: api.gerarId(),
+                tipo: parte.tipo,
+                modelo: parte.modelo,
+                topo: parte.topo,
+                altura: areaClicada.topo - parte.topo,
+                esquerda: areaClicada.esquerda,
+                largura: areaClicada.largura
+              });
+            }
+            
+            if(manterAreaInferior){
+              fase.partes.push({
+                id: api.gerarId(),
+                tipo: parte.tipo,
+                modelo: parte.modelo,
+                topo: areaClicada.topo + areaClicada.altura,
+                altura: parte.topo + parte.altura - (areaClicada.topo + areaClicada.altura),
+                esquerda: areaClicada.esquerda,
+                largura: areaClicada.largura
+              });
+            }
+          }
+          
+        });
+      }
+    });
+
+    api.salvarMundo(nomeMundo, otimizarMundo(mundo));
+  };
+
+  jogo.mouseCopiarBloco = (mouse) => {};
 
   jogo.desenharCanvasBotao = (botao, tipo) => {
     const ctxBotao = botao.querySelector('canvas')?.getContext('2d');

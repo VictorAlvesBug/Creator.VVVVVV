@@ -46,6 +46,7 @@ export default function createDesenho(ctx) {
       borderColor: coresBloco.borda,
       lineWidth: 4
     });
+
     if(coresBloco.hachurado){
       for(let i=chao.esquerda+chao.topo; i<chao.esquerda+chao.topo+chao.largura+chao.altura; i+= 15){
 
@@ -79,6 +80,11 @@ export default function createDesenho(ctx) {
           })
         }
       }
+
+    ctx.drawRect(chao.esquerda, chao.topo, chao.largura, chao.altura, {
+      borderColor: coresBloco.borda,
+      lineWidth: 4
+    });
     }
   };
 

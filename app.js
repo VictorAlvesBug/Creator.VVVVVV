@@ -36,13 +36,13 @@ async function loop() {
         jogo.desenharBlocoMouseHover(mouse.posicao);
         break;
       case mouse.BOTAO_ESQUERDO:
-        jogo.mouseAdicionar(mouse.posicao);
+        jogo.mouseAdicionarBloco(mouse.posicao);
         break;
       case mouse.BOTAO_DIREITO:
-        jogo.mouseRemover(mouse.posicao);
+        jogo.mouseRemoverBloco(mouse.posicao);
         break;
       case mouse.BOTAO_MEIO:
-        jogo.mouseCopiar(mouse.posicao);
+        jogo.mouseCopiarBloco(mouse.posicao);
         break;
     }
   }
@@ -50,6 +50,12 @@ async function loop() {
 
 Object.entries(mouse.objEventos).forEach(([nomeEvento, funcao]) => {
   canvas.addEventListener(nomeEvento, funcao);
+});
+
+// Desabilitando exibição do menu que aparece por padrão quando o botão direito 
+// do mouse é clicado
+canvas.addEventListener('contextmenu', (event) => {
+  event.preventDefault();
 });
 
 document.addEventListener('keydown', (event) => {
