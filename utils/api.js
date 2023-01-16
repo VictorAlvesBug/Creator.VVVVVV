@@ -60,32 +60,48 @@ export default function createApi() {
     });
   };
 
-  api.criarFase = (nomeMundo, idFaseOrigem, direcao) => {
-    const direcaoFase = direcoesFase[direcao];
-    if (!direcaoFase) {
-      return console.error(`A direção '${direcao}' é inválida.`);
-    }
-
-    const idFaseDestino = api.gerarId();
-
-    const mundo = api.retornarMundo(nomeMundo);
-    mundo.fases.map((fase) => {
-      if (fase.id === idFaseOrigem) {
-        fase[direcaoFase.origem] = idFaseDestino;
+  api.acessarFase = (nomeMundo, idFaseOrigem, direcao) => {
+    return new Promise((resolve, reject) => {
+      const direcaoFase = direcoesFase[direcao];
+      if (!direcaoFase) {
+        return console.error(`A direção '${direcao}' é inválida.`);
       }
+  
+      let idFaseDestino;
+      let gerarNovaFase = false;
 
-      return fase;
-    });
+    api.retornarMundo(nomeMundo)
+      .then(mundo => {
+        mundo.fases.forEach((fase) => {
+          if (fase.id === idFaseOrigem) {
+            if(!fase[direcaoFase.origem]){
+              fase[direcaoFase.origem] = api.gerarId();
+              gerarNovaFase = true;
+            }
 
-    const novaFase = {
-      partes: [],
-    };
+            idFaseDestino = fase[direcaoFase.origem];
+          }
+        });
+    
+        if(gerarNovaFase){
+          const novaFase = {
+            id: idFaseDestino,
+            partes: []
+          };
+    
+          novaFase[direcaoFase.destino] = idFaseOrigem;
+          
+          mundo.fases.push(novaFase);
+          
+          api.salvarMundo(nomeMundo, mundo);
+        }
 
-    novaFase[direcaoFase.destino] = idFaseOrigem;
+        resolve(idFaseDestino);
+      })
+      .catch(err => reject(err));
+    })
 
-    mundo.fases.push(novaFase);
-
-    api.salvarMundo(nomeMundo, mundo);
+    
   };
 
   return api;

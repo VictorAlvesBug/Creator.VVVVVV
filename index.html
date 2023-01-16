@@ -1,34 +1,65 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>VVVVVV Creator</title>
     <script defer type="module" src="./utils/powerCanvas.js"></script>
     <script defer type="module" src="./app.js"></script>
-    <link rel="stylesheet" href="./styles/base.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-</head>
-<body>
-    <canvas id="canvas" width="4000" height="2200"></canvas>
-    <div id="caixa-ferramentas">
-        <button class="btn-ferramenta" data-tipo="chao" data-modelo="comum">
-            <canvas width="190" height="190"></canvas>
-        </button>
-        <button class="btn-ferramenta" data-tipo="espinho" data-modelo="cima">
-            <canvas width="190" height="190"></canvas>
-        </button>
+    <link rel="stylesheet" href="./styles/base.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+  </head>
+  <body>
+    <div class="main">
 
-        <div class="pull-right">
-            <button class="btn-ferramenta icone" data-tipo="abrir-mundo">
-                <i class='fa-solid fa-folder-open'></i>
-            </button>
-            <button class="btn-ferramenta icone" data-tipo="salvar-mundo">
-                <i class='fa-solid fa-save'></i>
-            </button>
-            <button class="btn-ferramenta icone" data-tipo="limpar-fase">
-                <i class='fa-solid fa-trash-can'></i>
-            </button>
-        </div>
+      <div class="header">
+        <button class="btn-ferramenta icone" data-tipo="navegar-fase-cima">
+          <i class="fa-solid fa-arrow-up"></i>
+        </button>
+      </div>
+
+      <div class="content">
+        <button class="btn-ferramenta icone" data-tipo="navegar-fase-esquerda">
+          <i class="fa-solid fa-arrow-left"></i>
+        </button>
+        <canvas id="canvas" width="4000" height="2200"></canvas>
+        <button class="btn-ferramenta icone" data-tipo="navegar-fase-direita">
+          <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </div>
+
+      <div class="footer">
+        <button class="btn-ferramenta icone" data-tipo="navegar-fase-baixo">
+          <i class="fa-solid fa-arrow-down"></i>
+        </button>
+      </div>
+
     </div>
-</body>
+
+    <div id="caixa-ferramentas">
+      <button class="btn-ferramenta" data-tipo="chao" data-modelo="comum">
+        <canvas width="190" height="190"></canvas>
+      </button>
+      <button class="btn-ferramenta" data-tipo="espinho" data-modelo="cima">
+        <canvas width="190" height="190"></canvas>
+      </button>
+
+      <div class="pull-right">
+        <button class="btn-ferramenta icone" data-tipo="abrir-mundo">
+          <i class="fa-solid fa-folder-open"></i>
+        </button>
+        <button class="btn-ferramenta icone" data-tipo="salvar-mundo">
+          <i class="fa-solid fa-save"></i>
+        </button>
+        <button class="btn-ferramenta icone" data-tipo="limpar-fase">
+          <i class="fa-solid fa-trash-can"></i>
+        </button>
+      </div>
+    </div>
+  </body>
 </html>

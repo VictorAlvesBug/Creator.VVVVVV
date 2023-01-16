@@ -439,6 +439,38 @@ export default function createJogo(ctx) {
             });
           break;
 
+          case 'navegar-fase-cima':
+            api.acessarFase(retornarNomeMundoAtual(), idFaseAtual, 'cima')
+              .then(idFase => {
+                idFaseAtual = idFase;
+                momentoUltimaAtualizacao = 0;
+              })
+            break;
+
+            case 'navegar-fase-baixo':
+              api.acessarFase(retornarNomeMundoAtual(), idFaseAtual, 'baixo')
+                .then(idFase => {
+                  idFaseAtual = idFase;
+                  momentoUltimaAtualizacao = 0;
+                })
+              break;
+
+              case 'navegar-fase-esquerda':
+                api.acessarFase(retornarNomeMundoAtual(), idFaseAtual, 'esquerda')
+                  .then(idFase => {
+                    idFaseAtual = idFase;
+                    momentoUltimaAtualizacao = 0;
+                  })
+                break;
+
+                case 'navegar-fase-direita':
+                  api.acessarFase(retornarNomeMundoAtual(), idFaseAtual, 'direita')
+                    .then(idFase => {
+                      idFaseAtual = idFase;
+                      momentoUltimaAtualizacao = 0;
+                    })
+                  break;
+
         default:
           jogo.tipo = tipo;
           jogo.modelo = modelo;
