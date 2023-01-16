@@ -1,11 +1,13 @@
 import createApi from './api.js';
 import createDesenho from './desenho.js';
+import createUtils from './utils.js';
 
 export default function createJogo(ctx, nomeMundo) {
   const jogo = {};
 
   const api = createApi();
   const desenho = createDesenho(ctx);
+  const utils = createUtils();
 
   let idFaseAtual = null;
 
@@ -82,40 +84,47 @@ export default function createJogo(ctx, nomeMundo) {
           return console.error(`Parte do tipo '${parte.tipo}' não encontrada.`);
       }
     });
+    
+    desenho.desenharContornoChao(faseAtual.partes);
   };
 
   function otimizarMundo(objMundo) {
     objMundo.fases.forEach((fase) => {
-      let partesAdjacentes, partesSobrepostas;
-
-      //do {
       fase = unificarPartesAdjacentes(fase);
       fase = unificarPartesDuplicadas(fase);
-      //} while (partesAdjacentes?.repetir);
-
-      //do {
-      //partesSobrepostas = unificarPartesSobrepostas(fase);
-      //fase = partesSobrepostas.fase;
-      //} while (partesSobrepostas?.repetir);
     });
 
     return objMundo;
   }
 
-  function estaEntre(valor, minimo, maximo) {
-    if (isNaN(valor)) {
-      return console.error(`Valor ${valor} inválido.`);
+  function parteAEstaContidaNaParteB(pA, pB) {
+    if (
+      !pA.hasOwnProperty('esquerda') ||
+      !pA.hasOwnProperty('largura') ||
+      !pA.hasOwnProperty('topo') ||
+      !pA.hasOwnProperty('altura') ||
+      !pB.hasOwnProperty('esquerda') ||
+      !pB.hasOwnProperty('largura') ||
+      !pB.hasOwnProperty('topo') ||
+      !pB.hasOwnProperty('altura')
+    ) {
+      return console.error(
+        'As partes A e B devem conter todas as propriedades obrigatórias',
+        pA,
+        pB
+      );
     }
 
-    if (isNaN(minimo)) {
-      return console.error(`Valor ${minimo} inválido.`);
-    }
-
-    if (isNaN(maximo)) {
-      return console.error(`Valor ${maximo} inválido.`);
-    }
-
-    return valor >= minimo && valor <= maximo;
+    return (
+      utils.estaEntre(pA.esquerda, pB.esquerda, pB.esquerda + pB.largura) &&
+      utils.estaEntre(
+        pA.esquerda + pA.largura,
+        pB.esquerda,
+        pB.esquerda + pB.largura
+      ) &&
+      utils.estaEntre(pA.topo, pB.topo, pB.topo + pB.altura) &&
+      utils.estaEntre(pA.topo + pA.altura, pB.topo, pB.topo + pB.altura)
+    );
   }
 
   function unificarPartesAdjacentes(fase) {
@@ -143,23 +152,13 @@ export default function createJogo(ctx, nomeMundo) {
         const adjacentesVerticalmente =
           pA.topo + pA.altura === pB.topo || pB.topo + pB.altura === pA.topo;
 
-        const parteAEstaContidaNaParteB =
-          estaEntre(pA.esquerda, pB.esquerda, pB.esquerda + pB.largura) &&
-          estaEntre(
-            pA.esquerda + pA.largura,
-            pB.esquerda,
-            pB.esquerda + pB.largura
-          ) &&
-          estaEntre(pA.topo, pB.topo, pB.topo + pB.altura) &&
-          estaEntre(pA.topo + pA.altura, pB.topo, pB.topo + pB.altura);
-
         if (
           tipoEhOtimizavel &&
           !ehMesmaParte &&
           mesmoTipoEModelo &&
           ((alinhadasHorizontalmente && adjacentesHorizontalmente) ||
             (alinhadasVerticalmente && adjacentesVerticalmente) ||
-            parteAEstaContidaNaParteB)
+            parteAEstaContidaNaParteB(pA, pB))
         ) {
           const esquerda = Math.min(pA.esquerda, pB.esquerda);
           const topo = Math.min(pA.topo, pB.topo);
@@ -186,13 +185,11 @@ export default function createJogo(ctx, nomeMundo) {
 
   function unificarPartesDuplicadas(fase) {
     fase.partes = fase.partes.reduce((listaPartes, parteA) => {
-      const parteJaFoiAdicionada = listaPartes.some(
-        (parteB) => {
-          const {id: _, ...pA} = parteA;
-          const {id: __, ...pB} = parteB;
-          return JSON.stringify(pA) === JSON.stringify(pB); 
-        }
-      );
+      const parteJaFoiAdicionada = listaPartes.some((parteB) => {
+        const { id: _, ...pA } = parteA;
+        const { id: __, ...pB } = parteB;
+        return JSON.stringify(pA) === JSON.stringify(pB);
+      });
       if (!parteJaFoiAdicionada) {
         listaPartes.push(parteA);
       }
@@ -208,14 +205,9 @@ export default function createJogo(ctx, nomeMundo) {
   };
 
   jogo.mouseAdicionarBloco = (mouse) => {
-    const largura = 100;
-    const altura = 100;
-    let esquerda = mouse.X - largura / 2;
-    let topo = mouse.Y - altura / 2;
+    const areaClicada = desenho.retornarAreaMouse(mouse);
 
-    // Arredondar posição para bloco do grid mais próximo
-    esquerda = Math.round(esquerda / 100) * 100;
-    topo = Math.round(topo / 100) * 100;
+    jogo.mouseRemoverBloco(mouse);
 
     mundo.fases.forEach((fase) => {
       if (fase.id === idFaseAtual) {
@@ -223,10 +215,7 @@ export default function createJogo(ctx, nomeMundo) {
           id: api.gerarId(),
           tipo: jogo.tipo,
           modelo: jogo.modelo,
-          esquerda,
-          topo,
-          largura,
-          altura,
+          ...areaClicada
         });
       }
     });
@@ -235,53 +224,27 @@ export default function createJogo(ctx, nomeMundo) {
   };
 
   jogo.mouseRemoverBloco = (mouse) => {
-    const largura = 100;
-    const altura = 100;
-    let esquerda = mouse.X - largura / 2;
-    let topo = mouse.Y - altura / 2;
+    const areaClicada = desenho.retornarAreaMouse(mouse);
 
-    // Arredondar posição para bloco do grid mais próximo
-    esquerda = Math.round(esquerda / 100) * 100;
-    topo = Math.round(topo / 100) * 100;
+    mundo.fases.forEach((fase) => {
+      if (fase.id === idFaseAtual) {
+        fase.partes.forEach((parte) => {
+          if (parteAEstaContidaNaParteB(areaClicada, parte)) {
+            const manterAreaEsquerda = parte.esquerda < areaClicada.esquerda;
 
-    const areaClicada = {
-      largura,
-      altura,
-      esquerda,
-      topo
-    };
+            const manterAreaDireita =
+              parte.esquerda + parte.largura >
+              areaClicada.esquerda + areaClicada.largura;
 
-    mundo.fases.forEach(fase => {
-      if(fase.id === idFaseAtual){
-        fase.partes.forEach(parte => {
-          const parteContemAreaClicada = 
-            estaEntre(areaClicada.esquerda, parte.esquerda, parte.esquerda + parte.largura) &&
-            estaEntre(
-              areaClicada.esquerda + areaClicada.largura,
-              parte.esquerda,
-              parte.esquerda + parte.largura
-            ) &&
-            estaEntre(areaClicada.topo, parte.topo, parte.topo + parte.altura) &&
-            estaEntre(areaClicada.topo + areaClicada.altura, parte.topo, parte.topo + parte.altura) 
-    
-          if(parteContemAreaClicada){
-            const manterAreaEsquerda = 
-              parte.esquerda < areaClicada.esquerda;
-    
-            const manterAreaDireita = 
-              parte.esquerda + parte.largura > areaClicada.esquerda + areaClicada.largura;
-    
-            const manterAreaSuperior = 
-              parte.topo < areaClicada.topo;
-    
-            const manterAreaInferior = 
+            const manterAreaSuperior = parte.topo < areaClicada.topo;
+
+            const manterAreaInferior =
               parte.topo + parte.altura > areaClicada.topo + areaClicada.altura;
-            
+
             // Remover parte
-            fase.partes = fase.partes.filter(p => 
-              p.id !== parte.id);
-            
-            if(manterAreaEsquerda){
+            fase.partes = fase.partes.filter((p) => p.id !== parte.id);
+
+            if (manterAreaEsquerda) {
               fase.partes.push({
                 id: api.gerarId(),
                 tipo: parte.tipo,
@@ -289,11 +252,11 @@ export default function createJogo(ctx, nomeMundo) {
                 topo: parte.topo,
                 altura: parte.altura,
                 esquerda: parte.esquerda,
-                largura: areaClicada.esquerda - parte.esquerda
+                largura: areaClicada.esquerda - parte.esquerda,
               });
             }
-            
-            if(manterAreaDireita){
+
+            if (manterAreaDireita) {
               fase.partes.push({
                 id: api.gerarId(),
                 tipo: parte.tipo,
@@ -301,11 +264,14 @@ export default function createJogo(ctx, nomeMundo) {
                 topo: parte.topo,
                 altura: parte.altura,
                 esquerda: areaClicada.esquerda + areaClicada.largura,
-                largura: parte.esquerda + parte.largura - (areaClicada.esquerda + areaClicada.largura)
+                largura:
+                  parte.esquerda +
+                  parte.largura -
+                  (areaClicada.esquerda + areaClicada.largura),
               });
             }
-            
-            if(manterAreaSuperior){
+
+            if (manterAreaSuperior) {
               fase.partes.push({
                 id: api.gerarId(),
                 tipo: parte.tipo,
@@ -313,23 +279,25 @@ export default function createJogo(ctx, nomeMundo) {
                 topo: parte.topo,
                 altura: areaClicada.topo - parte.topo,
                 esquerda: areaClicada.esquerda,
-                largura: areaClicada.largura
+                largura: areaClicada.largura,
               });
             }
-            
-            if(manterAreaInferior){
+
+            if (manterAreaInferior) {
               fase.partes.push({
                 id: api.gerarId(),
                 tipo: parte.tipo,
                 modelo: parte.modelo,
                 topo: areaClicada.topo + areaClicada.altura,
-                altura: parte.topo + parte.altura - (areaClicada.topo + areaClicada.altura),
+                altura:
+                  parte.topo +
+                  parte.altura -
+                  (areaClicada.topo + areaClicada.altura),
                 esquerda: areaClicada.esquerda,
-                largura: areaClicada.largura
+                largura: areaClicada.largura,
               });
             }
           }
-          
         });
       }
     });
@@ -347,25 +315,46 @@ export default function createJogo(ctx, nomeMundo) {
     }
 
     const desenhoBotao = createDesenho(ctxBotao);
+/*
+blocoGrid = x
+botao = 2x - 10 = 200 - 10
+2x - 10 - 2borda = x;
+- 2borda = x - 2x + 10
+2borda = x - 10
+borda = (x - 10) / 2
 
+200 - 10 - 2borda = x;
+- 2borda = x - 200 + 10
+2borda = 200 - 10 - x
+
+2x - 10 = 200 - 10 = 190
+x = 100
+2borda = 190 - x
+2borda = 190 - 100
+2borda = 90
+borda = 45
+
+*/
     switch (tipo) {
       case 'chao':
+        const chao = 
         desenhoBotao.desenharChao({
           modelo: 'comum',
-          esquerda: 15,
-          topo: 15,
-          largura: 70,
-          altura: 70,
+          esquerda: 45,
+          topo: 45,
+          largura: 100,
+          altura: 100,
+          comContorno: true
         });
         break;
 
       case 'espinho':
         desenhoBotao.desenharEspinho({
           modelo: 'cima',
-          esquerda: 15,
-          topo: 15,
-          largura: 70,
-          altura: 70,
+          esquerda: 45,
+          topo: 45,
+          largura: 100,
+          altura: 100,
         });
         break;
 
@@ -422,7 +411,6 @@ export default function createJogo(ctx, nomeMundo) {
   };
 
   jogo.limparFase = () => {
-    console.log(mundo);
     mundo.fases.forEach((fase) => {
       if (fase.id === idFaseAtual) {
         fase.partes = [];

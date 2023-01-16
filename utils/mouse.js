@@ -45,8 +45,8 @@ export default function createMouse() {
     mousemove: ({ clientX, clientY, buttons }) => {
       const { left, top, width, height } = canvas.getBoundingClientRect();
 
-      mouse.posicao.X = ((clientX - left) / width) * 1600;
-      mouse.posicao.Y = ((clientY - top) / height) * 900;
+      mouse.posicao.X = ((clientX - left) / width) * 4000;
+      mouse.posicao.Y = ((clientY - top) / height) * 2200;
       mouse.posicao.valida = true;
 
       mouse.statusBotao = retornarStatusBotaoPressionado(buttons);
@@ -58,6 +58,7 @@ export default function createMouse() {
       }, 50);
     },
     mousedown: ({ buttons }) => {
+      console.log(123)
       mouse.statusBotao = retornarStatusBotaoPressionado(buttons);
     },
     mouseup: () => {

@@ -6,7 +6,7 @@ CanvasRenderingContext2D.prototype.drawLine = function (
   options
 ) {
   this.strokeStyle = options.color ?? '#f00';
-  this.lineWidth = options.lineWidth ?? 1;
+  this.lineWidth = options.lineWidth ?? 3;
   this.beginPath();
   this.moveTo(x1, y1);
   this.lineTo(x2, y2);
@@ -22,7 +22,7 @@ CanvasRenderingContext2D.prototype.drawRect = function (
 ) {
   if(!options.fillColor && !options.borderColor){
     this.strokeStyle = "#f00";
-    this.lineWidth = options.lineWidth ?? 1;
+    this.lineWidth = options.lineWidth ?? 3;
     
     this.beginPath();
     this.rect(left, top, width, height);
@@ -32,7 +32,7 @@ CanvasRenderingContext2D.prototype.drawRect = function (
   else{
     this.fillStyle = options.fillColor ?? '#000';
     this.strokeStyle = options.borderColor ?? "#f00";
-    this.lineWidth = options.lineWidth ?? 1;
+    this.lineWidth = options.lineWidth ?? 3;
     
     this.beginPath();
     this.rect(left, top, width, height);
@@ -53,7 +53,7 @@ CanvasRenderingContext2D.prototype.drawTriangle = function (
 ) {
   if(!options.fillColor && !options.borderColor){
     this.strokeStyle = "#f00";
-    this.lineWidth = options.lineWidth ?? 1;
+    this.lineWidth = options.lineWidth ?? 3;
     
     this.beginPath();
     this.rect(left, top, width, height);
@@ -63,7 +63,7 @@ CanvasRenderingContext2D.prototype.drawTriangle = function (
   else{
     this.fillStyle = options.fillColor ?? '#000';
     this.strokeStyle = options.borderColor ?? "#f00";
-    this.lineWidth = options.lineWidth ?? 1;
+    this.lineWidth = options.lineWidth ?? 3;
     
     this.beginPath();
     this.moveTo(x1, y1);

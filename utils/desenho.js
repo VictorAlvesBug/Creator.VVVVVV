@@ -1,4 +1,9 @@
+
+import createUtils from './utils.js';
+
 export default function createDesenho(ctx) {
+  const utils = createUtils();
+
   const desenho = {};
 
   desenho.limparCanvas = () => {
@@ -42,13 +47,11 @@ export default function createDesenho(ctx) {
     const coresBloco = retornarCoresBloco('chao', chao.modelo);
 
     ctx.drawRect(chao.esquerda, chao.topo, chao.largura, chao.altura, {
-      fillColor: coresBloco.preenchimento,
-      borderColor: coresBloco.borda,
-      lineWidth: 4
+      fillColor: coresBloco.preenchimento
     });
 
     if(coresBloco.hachurado){
-      for(let i=chao.esquerda+chao.topo; i<chao.esquerda+chao.topo+chao.largura+chao.altura; i+= 15){
+      for(let i=chao.esquerda+chao.topo; i<chao.esquerda+chao.topo+chao.largura+chao.altura; i+= 20){
 
         const limites = {
           xMin: chao.esquerda,
@@ -76,17 +79,100 @@ export default function createDesenho(ctx) {
         if(p1 && p2){
           ctx.drawLine(p1.x, p1.y, p2.x, p2.y, {
             color: coresBloco.hachurado,
-            lineWidth: 4
+            lineWidth: 6
           })
         }
       }
+    }
 
-    ctx.drawRect(chao.esquerda, chao.topo, chao.largura, chao.altura, {
-      borderColor: coresBloco.borda,
-      lineWidth: 4
-    });
+    if(chao.comContorno){
+      ctx.drawRect(chao.esquerda, chao.topo, chao.largura, chao.altura, {
+        borderColor: coresBloco.borda,
+        lineWidth: 8
+      });
     }
   };
+
+  desenho.desenharContornoChao = (listaPartes) => {
+    if(!listaPartes.find(parte => parte.tipo === 'chao')){
+      return;
+    }
+
+    // Traçando linhas das bordas do chão
+    const arrayChao = [];
+
+    const xMin = 0;
+    const xMax = 40-1;
+    const yMin = 0;
+    const yMax = 22-1;
+
+    let modeloChao;
+
+    for(let x=xMin; x<=xMax; x++){
+      arrayChao[x] = [];
+      for(let y=yMin; y<=yMax; y++){
+        arrayChao[x][y] = 0;
+      }
+    }
+
+    listaPartes.forEach((parte) => {
+      if(parte.tipo === 'chao'){
+        modeloChao = parte.modelo;
+        const xInicial = parte.esquerda / 100;
+        const xFinal = (parte.esquerda + parte.largura) / 100;
+        const yInicial = parte.topo / 100;
+        const yFinal = (parte.topo + parte.altura) / 100;
+
+        for(let x=xInicial; x<xFinal; x++){
+          for(let y=yInicial; y<yFinal; y++){
+            if(utils.estaEntre(x, xMin, xMax)
+              && utils.estaEntre(y, yMin, yMax)){
+                arrayChao[x][y] = 1;
+            }
+            else{
+              console.error(`A posição (x: ${x}, y: ${y}) não está entre os limites (x de ${xMin} até ${xMax}, y de ${yMin} até ${yMax})`);
+              break;
+            }
+          }
+        }
+      }
+    });
+
+    let listaLinhas = [];
+
+    for(let x=xMin; x<=xMax; x++){
+      for(let y=yMin; y<=yMax; y++){
+
+      if(utils.estaEntre(x+1, xMin, xMax) && arrayChao[x+1][y] !== arrayChao[x][y]){
+        listaLinhas.push({
+          x1: (x+1)*100,
+          y1: y*100 - 4, 
+          x2: (x+1)*100, 
+          y2: (y+1)*100 + 4 
+        });
+      }
+
+      if(utils.estaEntre(y+1, yMin, yMax) && arrayChao[x][y+1] !== arrayChao[x][y]){
+        listaLinhas.push({
+          x1: x*100 - 4,
+            y1: (y+1)*100, 
+            x2: (x+1)*100 + 4, 
+            y2: (y+1)*100  
+        });
+      }
+
+      }
+    }
+
+    const coresBloco = retornarCoresBloco('chao', modeloChao);
+
+    listaLinhas.forEach(linha => {
+      ctx.drawLine(linha.x1, linha.y1, linha.x2, linha.y2, {
+        lineWidth: 8,
+        color: coresBloco.borda
+      })
+    })
+  }
 
   desenho.desenharEspinho = (espinho) => {
     const coresBloco = retornarCoresBloco('espinho', espinho.modelo);
@@ -134,7 +220,14 @@ export default function createDesenho(ctx) {
     });
   };
 
-  desenho.desenharBlocoMouseHover = (mouse, tipo, modelo) => {
+  desenho.retornarAreaMouse = (mouse) => {
+    if (!mouse.hasOwnProperty('X') || !mouse.hasOwnProperty('Y')) {
+      return console.error(
+        'O parâmetro mouse precisa conter as propriedades X e Y.',
+        mouse
+      );
+    }
+
     const largura = 100;
     const altura = 100;
     let esquerda = mouse.X - largura / 2;
@@ -144,24 +237,27 @@ export default function createDesenho(ctx) {
     esquerda = Math.round(esquerda / 100) * 100;
     topo = Math.round(topo / 100) * 100;
 
+    return {
+      largura,
+      altura,
+      esquerda,
+      topo,
+    };
+  }
+
+  desenho.desenharBlocoMouseHover = (mouse, tipo, modelo) => {
+    const areaHover = desenho.retornarAreaMouse(mouse);
+    areaHover.tipo = tipo;
+    areaHover.modelo = modelo;
+
     switch(tipo){
       case 'chao':
-        desenho.desenharChao({
-          modelo,
-          esquerda,
-          topo,
-          largura,
-          altura
-        });
+        desenho.desenharChao(areaHover);
+
+        desenho.desenharContornoChao([areaHover])
         break;
         case 'espinho':
-          desenho.desenharEspinho({
-            modelo,
-            esquerda,
-            topo,
-            largura,
-            altura
-          });
+          desenho.desenharEspinho(areaHover);
           break;
           default:
             console.error(`Tipo de bloco '${tipo}' não encontrado.`)
